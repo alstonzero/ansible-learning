@@ -147,3 +147,43 @@ systemd:
  
  
 ```
+
+### 6、如何对palybook进行语法校验
+
+下面校验的方法，只能校验playbook是否正确，而不能校验yaml文件是否语法正确
+
+```
+ansible-playbook myplaybook.yml --syntax-check
+```
+
+因为playbook属于yaml格式，我们同样可以使用检查yaml的语法格式的方法进行检查playbook的语法正确性。
+
+
+
+### 7、如何运行playbook
+
+```
+ansible-playbook -i inventory.ini myplaybook.yml
+```
+
+
+
+### 8、如何单步跟从调试playbook
+
+执行task中的任务，需要手动确认是否往下执行。
+
+```
+ansible-playbook myplaybook.yml --step
+```
+
+
+
+### 9、如何测试运行palybook
+
+会执行完整的playbook，但是所有task中的行为都不会在远程服务器上执行，所有执行都是模拟行为。
+
+```
+ansible-playbook myplaybook.yml -C
+```
+
+- `-C`为大写字母的c
