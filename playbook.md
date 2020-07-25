@@ -84,12 +84,16 @@ play中的每一个key，比如key1,key2等；这些key在playbook中被定义�
 - remote_user属性，指定连接被管理节点的用户，就是在远程服务器上执行具体操作的用户。若不指定，则默认使用当前执行ansible playbook的用户。
 
 ### 3、一个完整的playbook
+palybook里面url必须要''但是不需要转义字符
 ```
+
 ---
 - name: the first play example
   hosts: all
   remote_user: root
   tasks:
+    - name: add nginx repo source
+      yum_repository: name=nginx baseurl='http://nginx.org/packages/centos/$releasever/$basearch/' description='nginx stable repo'
     - name: install nginx package
       yum: name=nginx state=present
     - name: copy nginx.conf to remote server
@@ -126,6 +130,8 @@ systemd:
   hosts: web_servers
   remote_user: root
   tasks: 
+    - name: add nginx repo source
+      yum_repository: name=nginx baseurl='http://nginx.org/packages/centos/$releasever/$basearch/' description='nginx stable repo'
     - name: install nginx package
       yum: name=nginx state=present
     - name: copy nignx 
