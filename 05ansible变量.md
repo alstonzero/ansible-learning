@@ -303,5 +303,30 @@ PLAY RECAP *********************************************************************
   remote_user: root
   tasks:
     - name: install nginx package
-      yum
+      yum: name=nginx state=present
+      register: install_result
+    - name: print result
+      debug: var=install_result
+```
+#### 执行
+```
+# ansible-playbook myplaybook3.yml
+
+```
+### 6.变量优先级
+目前介绍了
+其中Facts变量不需要人为去声明、赋值；注册变量只需要通过关键自register去声明，而不需要赋值。
+而全局变量、剧本变量及资产变量则完全需要人为的去声明、赋值。
+变量的优先权讨论，也将着重从这三类变量去分析。
+假如在使用过程中，我们同时在全局变量、剧本变量及资产变量声明了同一个变量名，那么哪一个优先级最高呢？
+下面我们将以实验的形式去验证变量的优先级。
+#### 环境准备
+- 1、定义一份资产、而定义了资产变量user
+```
+[db_servers]
+
+[web_servers]
+
+```
+
 ```
