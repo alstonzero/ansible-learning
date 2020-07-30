@@ -164,3 +164,144 @@ name:{{user}}是一个字典的开始。因此加针对变量的使用，加上�
 
 ### 3、资产变量
 
+在之前的课程中学习了资产。资产共分为静态资产和动态资产。
+这一节中学习的资产变量，就是和资产紧密相关的一种变量。
+资产变量分为**主机变量**和**组变量**，分别针对资产中的单个主机和主机组。
+#### 3.1 主机变量
+添加到主机名或主机IP后面。例子：在web_servers添加变量user和port
+```
+[web_servers]                                                                              
+111.171.216.69 user=alston port=2222
+ 
+[db_servers]
+111.171.208.123
+ 
+[all_servers]
+[all_servers:children]
+web_servers
+db_servers
+ 
+[all_servers:vars]
+ansible_port=22 
+ansible_user=root 
+ansible_ssh_private_key_file=/home/alston/.ansible/cp/id_rsa
+
+```
+#### 验证
+- 获取定义的变量值
+```
+#ansible web_servers -i inventory.ini -m debug -a "msg='user:{{user}} port:{{port}}'"
+111.171.216.69 | SUCCESS => {
+    "msg": "user:alston port:2222"
+}
+
+```
+- 未获取到定义的变量值，因为user这个变量对于111.171.208.123无效
+```
+111.171.208.123 | FAILED! => {
+    "msg": "The task includes an option with an undefined variable. The error was: 'user' is undefined"
+}
+
+```
+#### 3.2主机组变量
+以下inventory中，定义了一个组变量home，此变量将针对webservers这个主机组中的所有的服务器有效。
+```
+[web_servers:vars]
+home="home/alston"
+```
+
+#### 3.3 变量的优先级
+主机变量优先级高于组变量
+
+#### 3.4变量的继承
+例子：all_servers组的成员是从web_servers和db_servers中继承过来的。
+```
+[all_servers]
+[all_servers:children]
+web_servers
+db_servers
+```
+### 3.5inventory内置变量的说明
+内置变量几乎都以`ansible_`为前缀
+
+### Facts变量
+Facts变量不包含在前文中介绍的全局变量、剧本变量及资产变量之内。
+Facts变量不需要我们人为去声明变量名及赋值。
+它的声明和赋值完全由ansible中setup模块帮我们完成。
+它收集了有关被管理服务器的操作系统版本、服务器IP地址、主机名，磁盘的使用情况、CPU个数、内存大小等等有关被管理服务器的私有信息。
+在每次playbook运行的时候都会发现在playbook执行前都会有一个Gathering Facts的过程。这个过程就是收集被管理服务器的Facts信息过程。
+#### 4.1手动收集Facts变量
+```
+ansible all -i inventory.ini -m setup 
+```
+由于输出的信息实在太多。因此，需要过滤进行处理。
+#### 4.2 filter参数去过滤信息
+- 比如过滤出内存的信息
+```
+ansible all -i inventory.ini - m setup -a "filter=*memory*"
+```
+- 仅获取服务器的磁盘挂载情况
+```
+ansible all -i inventory.ini -m setup -a "filter=*mount*" 
+```
+#### 4.3在playbook中去使用Facts变量
+默认情况下，在执行playbook的时候，它会去自动的获取每台被管理服务器的facts信息。用变量获取即可。
+```
+# cat testFacts.yml 
+---
+- name: a play example
+  hosts: all
+  remote_user: root
+  tasks:
+    - name: print facts variable
+      debug:
+        msg: "The default IPV4 address is {{ansible_default_ipv4.address}}"
+```
+输出结果
+```
+# ansible-playbook -i inventory.ini testFacts.yml 
+
+PLAY [a play example] *********************************************************************
+
+TASK [Gathering Facts] ********************************************************************
+ok: [111.171.208.123]
+ok: [111.171.216.69]
+
+TASK [print facts variable] ***************************************************************
+ok: [111.171.216.69] => {
+    "msg": "The deafult IPV4 address is 111.171.216.69"
+}
+ok: [111.171.208.123] => {
+    "msg": "The deafult IPV4 address is 111.171.208.123"
+}
+
+PLAY RECAP ********************************************************************************
+111.171.208.123            : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+111.171.216.69             : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+#### 在playbook中去关闭Facts变量的获取
+- 若在整个playbook的执行过程中，完全未使用过Facts变量，此时我们可以将其关闭`gather_facts:no`，以加快playbook的执行速度。
+```
+---
+- name: a play example
+  hosts: all
+  gather_facts: no
+  remote_user: root
+  tasks:
+    - name: print hello world
+      shell: echo "Hello World"
+```
+
+### 5.注册变量
+往往用于保存一个task任务的执行结果,以便于debug时使用。
+或者将此次task的结果作为条件，去判断是否去执行其他task任务
+注册变量在playbook中通过`registor`键字去实现。
+```
+---
+- name: install a package and print the result
+  hosts: web_servers
+  remote_user: root
+  tasks:
+    - name: install nginx package
+      yum
+```
